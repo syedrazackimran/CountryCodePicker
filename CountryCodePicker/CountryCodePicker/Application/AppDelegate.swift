@@ -59,11 +59,10 @@ extension AppDelegate:CLLocationManagerDelegate {
         if  locations.count == 0  {
             return
         }
-        guard var _currentLocation = currentLocation, let lastLocation = locations.last else { return }
-        _currentLocation = lastLocation
+        guard let lastLocation = locations.last else { return }
         currentLocation = lastLocation
-        if _currentLocation.coordinate.latitude != 0 {
-            CLGeocoder().reverseGeocodeLocation(_currentLocation, completionHandler:{  placemarks, error -> Void in
+        if currentLocation!.coordinate.latitude != 0 {
+            CLGeocoder().reverseGeocodeLocation(currentLocation!, completionHandler:{  placemarks, error -> Void in
                 if error != nil {
                     return
                 }
