@@ -5,6 +5,11 @@
 ## Build generated
 build/
 DerivedData/
+xcuserdata/
+
+
+## DS STORE FILE
+.DS_Store
 
 ## Various settings
 *.pbxuser

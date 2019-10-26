@@ -10,21 +10,22 @@ import UIKit
 import CoreLocation
 
 @UIApplicationMain
-class AppDelegate: UIResponder, UIApplicationDelegate,CLLocationManagerDelegate {
+class AppDelegate: UIResponder, UIApplicationDelegate {
 
     var window: UIWindow?
-    var mlocationManager = CLLocationManager()
-    var currentLocation : CLLocation?
+    private var mlocationManager: CLLocationManager = {
+        let manager = CLLocationManager()
+        manager.requestWhenInUseAuthorization()
+        manager.distanceFilter = kCLLocationAccuracyBest
+        manager.desiredAccuracy = kCLLocationAccuracyBest
+        return manager
+    }()
+    private var currentLocation: CLLocation?
 
 
-    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
+    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey:Any]?) -> Bool {
         // Override point for customization after application launch.
-        
-        //MARK: CLLocationManager init
-        mlocationManager.startUpdatingLocation()
-        mlocationManager.requestAlwaysAuthorization()
         mlocationManager.delegate = self
-
         return true
     }
 
@@ -43,65 +44,59 @@ class AppDelegate: UIResponder, UIApplicationDelegate,CLLocationManagerDelegate 
     }
 
     func applicationDidBecomeActive(_ application: UIApplication) {
+        self.mlocationManager.startUpdatingLocation()
         // Restart any tasks that were paused (or not yet started) while the application was inactive. If the application was previously in the background, optionally refresh the user interface.
     }
 
     func applicationWillTerminate(_ application: UIApplication) {
         // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
     }
-        //MARK: CLLocationManager Delegate
+}
+
+extension AppDelegate:CLLocationManagerDelegate {
+    //MARK: CLLocationManager Delegate
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        let geoCoder = CLGeocoder()
-        
         if  locations.count == 0  {
             return
         }
-        if nil != currentLocation && (locations.last?.isEqual(currentLocation))! {
-            return
-        }
-        
-        currentLocation = locations.last
-        if currentLocation?.coordinate.latitude != 0 {
-            geoCoder.reverseGeocodeLocation(currentLocation!, completionHandler: {  (placemarks, error) -> Void in
+        guard var _currentLocation = currentLocation, let lastLocation = locations.last else { return }
+        _currentLocation = lastLocation
+        currentLocation = lastLocation
+        if _currentLocation.coordinate.latitude != 0 {
+            CLGeocoder().reverseGeocodeLocation(_currentLocation, completionHandler:{  placemarks, error -> Void in
                 if error != nil {
                     return
                 }
-                if placemarks != nil {
-                    if (placemarks?.count)! > 0 {
-                        let countryCode  = placemarks?[0].isoCountryCode
-                        let locality = placemarks?[0].locality
-                        if let path = Bundle.main.path(forResource: "countryCodes", ofType: "json") {
+                guard let placemarks = placemarks else { return }
+                if placemarks.count > 0 {
+                        guard let countryCode  = placemarks[0].isoCountryCode else { return }
+                        guard let locality = placemarks[0].locality else {return}
+                        if let filePath = Bundle.main.path(forResource: "countryCodes", ofType: "json") {
                             do {
-                                let jsonData = try NSData(contentsOfFile: path, options: NSData.ReadingOptions.mappedIfSafe)
-                                do {
-                                    let jsonResult = try JSONSerialization.jsonObject(with: jsonData as Data, options: JSONSerialization.ReadingOptions.mutableContainers) //as! NSDictionary
-                                    let totalArray = (jsonResult as! [AnyObject])
-                                    var code: String?
-                                    for  i in totalArray {
-                                        code = i ["code"] as? String
+                                let data = try Data(contentsOf: URL(fileURLWithPath: filePath), options: .mappedIfSafe)
+                                let json = try JSONSerialization.jsonObject(with: data, options: .allowFragments)
+                                guard let totalArray = json as? [[String:String]] else  { return }
+                                totalArray.forEach { data in
+                                    if let code = data["code"] {
                                         if code == countryCode {
-                                            let CountryDict = NSMutableDictionary()
-                                            CountryDict.setObject(i["code"], forKey: "countrycode" as NSCopying)
-                                            CountryDict.setObject(i["dial_code"], forKey: "countrydialcode" as NSCopying)
-                                            CountryDict.setObject(i["name"], forKey: "countryname" as NSCopying)
-                                            CountryDict.setObject(locality!, forKey: "countycity" as NSCopying)
-                                            NotificationCenter.default.post(name: NSNotification.Name(rawValue: "KImUcurrentCountry"), object: CountryDict)
+                                            var countryData = [String:String]()
+                                            countryData["countrycode"] = data["code"] ?? ""
+                                            countryData["countrydialcode"] =  data["dial_code"] ?? ""
+                                            countryData["countryname"] =  data["name"] ?? ""
+                                            countryData["countycity"] = locality
                                             self.mlocationManager.stopUpdatingLocation()
-                                            break
+                                            NotificationCenter.default.post(name:Notification.Name("imran"), object:countryData)
+                                            return
                                         }
                                     }
-                                    
-                                } catch {}
-                            } catch {}
+                                }
+                            } catch let error {
+                                print(error.localizedDescription)
+                            }
                         }
-                        
                     }
-                }
                 self.mlocationManager.stopUpdatingLocation()
             })
         }
     }
-
-
 }
-

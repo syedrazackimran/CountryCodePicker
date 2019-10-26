@@ -24,10 +24,10 @@ class CountryCodeCell: UITableViewCell {
 
     override func setSelected(_ selected: Bool, animated: Bool) {
         super.setSelected(selected, animated: animated)
-        if (selected) {
-            self.accessoryType = UITableViewCellAccessoryType.checkmark;
+        if selected {
+            self.accessoryType = .checkmark
         } else {
-            self.accessoryType = UITableViewCellAccessoryType.none;
+            self.accessoryType = .none
         }
         // Configure the view for the selected state
     }
