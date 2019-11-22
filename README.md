@@ -13,7 +13,7 @@ by CLLocationMaganer Delegate and CLPlaceMarker get Country Code
 2. didupdateLocation
 Pass dictionary by using NotificationCenter to Viewcontroller to update current country details
 
-##CountryCodeVC
+## CountryCodeVC
 
 SearchBar - to search counrty
 Image ,country name and dial code 
