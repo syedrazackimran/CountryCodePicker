@@ -5,6 +5,7 @@ Getting Current Location Country Name, Dial Code and Flag
 Change CountryPicker
 
 ## Steps
+'
 1. didFinishLaunchingWithOptions 
 
 assign CLLocationMaganer to get current lattitude and longitude
@@ -12,6 +13,7 @@ by CLLocationMaganer Delegate and CLPlaceMarker get Country Code
 
 2. didupdateLocation
 Pass dictionary by using NotificationCenter to Viewcontroller to update current country details
+'
 
 ## CountryCodeVC
 
