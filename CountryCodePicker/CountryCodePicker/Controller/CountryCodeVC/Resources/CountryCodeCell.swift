@@ -15,20 +15,17 @@ class CountryCodeCell: UITableViewCell {
     override func awakeFromNib() {
         super.awakeFromNib()
         // Initialization code
-        countryImage.layer.cornerRadius = 4
-        countryImage.layer.masksToBounds = false
-        countryImage.layer.shadowOffset = CGSize(width: CGFloat(1.5), height: CGFloat(1.5))
-        countryImage.layer.shadowRadius = 5
-        countryImage.layer.shadowOpacity = 0.3
+        setupView()
     }
 
+    private func setupView() {
+        countryImage.layer.cornerRadius = 4
+        countryImage.layer.masksToBounds = true
+    }
+    
     override func setSelected(_ selected: Bool, animated: Bool) {
         super.setSelected(selected, animated: animated)
-        if selected {
-            self.accessoryType = .checkmark
-        } else {
-            self.accessoryType = .none
-        }
+        self.accessoryType = selected == true ? .checkmark : .none
         // Configure the view for the selected state
     }
 

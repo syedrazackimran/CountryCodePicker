@@ -8,43 +8,55 @@
 
 import UIKit
 
-class ViewController: UIViewController, CountryCodeDelegate {
-    @IBOutlet var lbl_CountryName: UILabel!
-    @IBOutlet var lbl_CountryCode: UILabel!
-    @IBOutlet var image_CountryFlag: UIImageView!
+class ViewController: UIViewController  {
+    @IBOutlet var countryNameLabel: UILabel!
+    @IBOutlet var countryCodeLabel: UILabel!
+    @IBOutlet var countryFlagImageView: UIImageView!
 
     override func viewDidLoad() {
         super.viewDidLoad()
 //      
-        NotificationCenter.default.addObserver(self, selector:#selector(self.UpdateLocation(notification: )), name:Notification.Name("imran"), object:nil)
+        NotificationCenter.default.addObserver(self, selector:#selector(self.UpdateLocation(notification: )), name:Notification.Name(notificationName), object:nil)
         // Do any additional setup after loading the view, typically from a nib.
     }
     
     //MARK: Update Current Country Details
-    @objc private func UpdateLocation(notification: Notification) {
+    @objc
+    private func UpdateLocation(notification: Notification) {
         guard let  countryDict = notification.object as?  [String:String] else { return }
-        lbl_CountryName.text = countryDict["countrydialcode"]
-        lbl_CountryCode.text = countryDict["countrycode"]
-        image_CountryFlag.image = UIImage.init(named: countryDict["countrycode"] ?? "")
-        NotificationCenter.default.removeObserver(self, name:Notification.Name("imran"), object:nil)
+        guard let dialCode = countryDict["countryDialCode"],
+              let countryName = countryDict["countryName"],
+              let countryCode = countryDict["countryCode"] else { return }
+        countryCodeLabel.text = dialCode
+        countryNameLabel.text = "\(countryName) - \(countryCode)"
+        countryFlagImageView.image = UIImage(named: countryCode)
+        NotificationCenter.default.removeObserver(self, name: Notification.Name(notificationName), object: nil)
     }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
+    
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         if segue.identifier == "OpenCountry" {
-            guard let CountryVC = segue.destination as? CountryCodeVC else { return }
-            CountryVC.delegate = self
+            guard let countryVC = segue.destination as? CountryCodeVC else { return }
+            countryVC.delegate = self
         }
-    }
-    //MARK: CountryCodeDelegate
-
-    func didselectCounty(country: [String:String]) {
-        lbl_CountryName.text = country["name"]
-        lbl_CountryCode.text = country["dial_code"]
-        image_CountryFlag.image = UIImage.init(named: country["code"] ?? "")
     }
 }
 
+
+extension ViewController: CountryCodeDelegate {
+    //MARK: CountryCodeDelegate
+
+    func didselectCounty(country: [String:String]) {
+        guard let countryName = country["name"],
+              let dialCode = country["dial_code"],
+              let countryCode = country["code"] else { return }
+        countryNameLabel.text = "\(countryName) - \(countryCode)"
+        countryCodeLabel.text = dialCode
+        countryFlagImageView.image = UIImage(named: countryCode)
+    }
+
+}

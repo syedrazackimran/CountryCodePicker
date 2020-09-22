@@ -6,6 +6,7 @@
 //  Copyright © 2017 2ntkh. All rights reserved.
 //
 
+
 import UIKit
 import CoreLocation
 
@@ -20,7 +21,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         manager.desiredAccuracy = kCLLocationAccuracyBest
         return manager
     }()
-    private var currentLocation: CLLocation?
+    private var currentLocation: CLLocation!
 
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey:Any]?) -> Bool {
@@ -53,7 +54,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 }
 
-extension AppDelegate:CLLocationManagerDelegate {
+extension AppDelegate: CLLocationManagerDelegate {
     //MARK: CLLocationManager Delegate
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         if  locations.count == 0  {
@@ -61,41 +62,53 @@ extension AppDelegate:CLLocationManagerDelegate {
         }
         guard let lastLocation = locations.last else { return }
         currentLocation = lastLocation
-        if currentLocation!.coordinate.latitude != 0 {
-            CLGeocoder().reverseGeocodeLocation(currentLocation!, completionHandler:{  placemarks, error -> Void in
-                if error != nil {
+        if currentLocation.coordinate.latitude != 0 {
+            CLGeocoder().reverseGeocodeLocation(currentLocation) { placemarks, error  in
+                if let error = error {
+                    // get error, and stop action
+                    print(error.localizedDescription)
                     return
                 }
                 guard let placemarks = placemarks else { return }
                 if placemarks.count > 0 {
-                        guard let countryCode  = placemarks[0].isoCountryCode else { return }
-                        guard let locality = placemarks[0].locality else {return}
-                        if let filePath = Bundle.main.path(forResource: "countryCodes", ofType: "json") {
-                            do {
-                                let data = try Data(contentsOf: URL(fileURLWithPath: filePath), options: .mappedIfSafe)
-                                let json = try JSONSerialization.jsonObject(with: data, options: .allowFragments)
-                                guard let totalArray = json as? [[String:String]] else  { return }
-                                totalArray.forEach { data in
-                                    if let code = data["code"] {
-                                        if code == countryCode {
-                                            var countryData = [String:String]()
-                                            countryData["countrycode"] = data["code"] ?? ""
-                                            countryData["countrydialcode"] =  data["dial_code"] ?? ""
-                                            countryData["countryname"] =  data["name"] ?? ""
-                                            countryData["countycity"] = locality
-                                            self.mlocationManager.stopUpdatingLocation()
-                                            NotificationCenter.default.post(name:Notification.Name("imran"), object:countryData)
-                                            return
-                                        }
+                    guard let countryCode  = placemarks.first?.isoCountryCode else { return }
+                    guard let locality = placemarks.first?.locality else {return}
+                    if let filePath = Bundle.main.path(forResource: jsonFileName, ofType: "json") {
+                        do {
+                            let URLfilePath = URL(fileURLWithPath: filePath)
+                            let data = try Data(contentsOf: URLfilePath, options: .mappedIfSafe)
+                            let json = try JSONSerialization.jsonObject(with: data, options: .allowFragments)
+                            guard let totalArray = json as? [[String:String]] else  { return }
+                            totalArray.forEach { data in
+                                if let code = data["code"] {
+                                    // comparing iso Code from Location to Local jSON country Code
+                                    if code == countryCode {
+                                        var countryData = [String:String]()
+                                        guard let countryCode = data["code"],
+                                              let dialCode = data["dial_code"],
+                                              let countryName = data["name"] else { return }
+                                        countryData["countryCode"] = countryCode
+                                        countryData["countryDialCode"] =  dialCode
+                                        countryData["countryName"] =  countryName
+                                        countryData["countyCity"] = locality
+                                        self.mlocationManager.stopUpdatingLocation()
+                                        NotificationCenter.default.post(name: Notification.Name(notificationName), object: countryData)
+                                        return
                                     }
                                 }
-                            } catch let error {
-                                print(error.localizedDescription)
                             }
+                        } catch let error {
+                            print(error.localizedDescription)
                         }
                     }
+                }
                 self.mlocationManager.stopUpdatingLocation()
-            })
+            }
         }
     }
 }
+
+//Don't not change It's Important
+let notificationName = "didFetchLocationData"
+let jsonFileName = "countryCodes"
+
