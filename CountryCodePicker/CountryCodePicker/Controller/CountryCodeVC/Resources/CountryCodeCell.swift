@@ -3,12 +3,14 @@
 //  CountryCodePicker
 //
 //  Created by Imu on 6/7/17.
-//  Copyright © 2017 2ntkh. All rights reserved.
+//  Copyright © 2017 Imran. All rights reserved.
 //
 import UIKit
 
 class CountryCodeCell: UITableViewCell {
 
+    static let cellIdentifier = String(describing: CountryCodeCell.self)
+    
     @IBOutlet var countryCodeLbl: UILabel!
     @IBOutlet var countryNameLbl: UILabel!
     @IBOutlet var countryImage: UIImageView!
@@ -29,4 +31,9 @@ class CountryCodeCell: UITableViewCell {
         // Configure the view for the selected state
     }
 
+    func set(with model: CountriesResponseModelElement) {
+        countryNameLbl.text = model.name
+        countryCodeLbl.text = model.dialCode
+        countryImage.setImage(with: model.filePath)
+    }
 }
